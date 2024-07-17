@@ -5,8 +5,8 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server);
+const server = http.createServer(app);  // Création du serveur HTTP avec Express
+const io = socketIo(server);  // Attacher Socket.IO au serveur HTTP
 
 app.use(express.static(path.join(__dirname)));
 app.use(express.json());
@@ -36,6 +36,7 @@ Heure: ${reservation.heure}
     });
 });
 
+// Connexion à Socket.IO
 io.on('connection', (socket) => {
     console.log('Nouvelle connexion socket.io');
 
