@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rendez-vous</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+
+        .messages-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .messages-container h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .message {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .message p {
+            margin: 5px 0;
+        }
+
+        .delete-button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-button:hover {
+            background-color: #e63946;
+        }
+    </style>
+</head>
+<body>
+    <div class="messages-container">
+        <h1>Rendez-Vous</h1>
+        <div id="messages"></div>
+        <button class="delete-button" onclick="supprimerMessages()">Supprimer tous les messages</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const messagesContainer = document.getElementById('messages');
+
+        // Écouter l'événement 'message' depuis le serveur
+        socket.on('message', (message) => {
+            // Créer un élément pour afficher le message
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message');
+            
+            // Construire le contenu du message
+            messageElement.innerHTML = `
+                <p><strong>Nom:</strong> ${message.nom}</p>
+                <p><strong>Prénom:</strong> ${message.prenom}</p>
+                <p><strong>Numéro de téléphone:</strong> ${message.telephone}</p>
+                <p><strong>Choix de coiffure:</strong> ${message.choix}</p>
+                <p><strong>Type de client:</strong> ${message.typeClient}</p>
+                <p><strong>Heure du rendez-vous:</strong> ${message.heure}</p>
+            `;
+            
+            // Ajouter le message à l'interface utilisateur
+            messagesContainer.appendChild(messageElement);
+        });
+
+        // Fonction pour supprimer tous les messages
+        function supprimerMessages() {
+            messagesContainer.innerHTML = '';
+        }
+    </script>
+</body>
+</html>

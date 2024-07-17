@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prenez rendez-vous</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 20px;
+        }
+
+        .formulaire-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .formulaire-container h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .formulaire-container form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .formulaire-container form div {
+            margin-bottom: 10px;
+        }
+
+        .formulaire-container form label {
+            font-weight: bold;
+        }
+
+        .formulaire-container form input[type="text"],
+        .formulaire-container form select,
+        .formulaire-container form input[type="time"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .formulaire-container form button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .formulaire-container form button:hover {
+            background-color: #45a049;
+        }
+
+        .erreur {
+            border: 2px solid red !important; /* Force la bordure rouge même si elle est déjà rouge */
+        }
+
+        .erreur-message {
+            color: red;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .prix-section {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .dark-mode .formulaire-container {
+            background-color: #444;
+        }
+
+        .dark-mode .formulaire-container h1 {
+            color: #fff;
+        }
+
+        .dark-mode .formulaire-container form input[type="text"],
+        .dark-mode .formulaire-container form select,
+        .dark-mode .formulaire-container form input[type="time"] {
+            background-color: #555;
+            color: #fff;
+            border: 1px solid #666;
+        }
+
+        .dark-mode .formulaire-container form button {
+            background-color: #6CAF50;
+        }
+
+        .dark-mode .formulaire-container form button:hover {
+            background-color: #5a9d45;
+        }
+    </style>
+</head>
+<body>
+    <div class="formulaire-container">
+        <h1>Prenez rendez-vous</h1>
+        <button id="toggle-dark-mode">Mode Sombre</button>
+        <form id="formulaire">
+            <div>
+                <label for="nom">Nom:</label>
+                <input type="text" id="nom" required>
+                <div id="nomErreur" class="erreur-message"></div>
+            </div>
+            <div>
+                <label for="prenom">Prénom:</label>
+                <input type="text" id="prenom" required>
+                <div id="prenomErreur" class="erreur-message"></div>
+            </div>
+            <div>
+                <label for="telephone">Numéro de téléphone:</label>
+                <input type="text" id="telephone" required>
+                <div id="telephoneErreur" class="erreur-message"></div>
+            </div>
+            <div>
+                <label for="choix">Choix de coiffure:</label>
+                <select id="choix" required>
+                    <option value="">Sélectionnez...</option>
+                    <option value="taper">Taper</option>
+                    <option value="dégrader">Dégrader</option>
+                </select>
+                <div id="choixErreur" class="erreur-message"></div>
+            </div>
+            <div id="typeClientSection">
+                <label>Type de client:</label><br>
+                <input type="radio" id="enfant" name="typeClient" value="enfant">
+                <label for="enfant">Enfant</label>
+                <input type="radio" id="adulte" name="typeClient" value="adulte">
+                <label for="adulte">Adulte</label>
+                <div id="prixSection" class="prix-section"></div>
+                <div id="typeClientErreur" class="erreur-message"></div>
+            </div>
+            <div>
+                <label for="heure">Heure du rendez-vous (entre 12h et 20h):</label>
+                <input type="time" id="heure" min="12:00" max="20:00" required>
+                <div id="heureErreur" class="erreur-message"></div>
+            </div>
+            <div>
+                <button type="button" onclick="envoyerMessage()">Envoyer</button>
+            </div>
+            <div id="globalErreur" class="erreur-message"></div>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        document.getElementById('toggle-dark-mode').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+        });
+
+        function envoyerMessage() {
+            // Réinitialiser les messages d'erreur
+            resetErreurs();
+
+            // Récupérer les valeurs des champs
+            const nom = document.getElementById('nom').value.trim();
+            const prenom = document.getElementById('prenom').value.trim();
+            const telephone = document.getElementById('telephone').value.trim();
+            const choix = document.getElementById('choix').value;
+            const heure = document.getElementById('heure').value;
+            const typeClient = document.querySelector('input[name="typeClient"]:checked');
+
+            // Valider les champs
+            let formValide = true;
+
+            if (nom === '') {
+                document.getElementById('nom').classList.add('erreur');
+                document.getElementById('nomErreur').textContent = 'Veuillez remplir ce champ.';
+                formValide = false;
+            }
+
+            if (prenom === '') {
+                document.getElementById('prenom').classList.add('erreur');
+                document.getElementById('prenomErreur').textContent = 'Veuillez remplir ce champ.';
+                formValide = false;
+            }
+
+            if (telephone === '') {
+                document.getElementById('telephone').classList.add('erreur');
+                document.getElementById('telephoneErreur').textContent = 'Veuillez remplir ce champ.';
+                formValide = false;
+            }
+
+            if (choix === '') {
+                document.getElementById('choix').classList.add('erreur');
+                document.getElementById('choixErreur').textContent = 'Veuillez sélectionner une option.';
+                formValide = false;
+            }
+
+            if (!typeClient) {
+                document.getElementById('typeClientErreur').textContent = 'Sélectionnez si vous êtes un enfant ou un adulte.';
+                formValide = false;
+            }
+
+            if (heure === '') {
+                document.getElementById('heure').classList.add('erreur');
+                document.getElementById('heureErreur').textContent = 'Veuillez sélectionner une heure.';
+                formValide = false;
+            } else {
+                const heureParts = heure.split(':');
+                const heureInt = parseInt(heureParts[0]);
+                if (heureInt < 12 || heureInt > 20) {
+                    document.getElementById('heure').classList.add('erreur');
+                    document.getElementById('heureErreur').textContent = 'Sélectionnez une heure entre 12h et 20h.';
+                    formValide = false;
+                } else if (heureInt > 20) {
+                    document.getElementById('heure').classList.add('erreur');
+                    document.getElementById('heureErreur').textContent = 'Sélectionnez une heure avant 20h.';
+                    formValide = false;
+                }
+            }
+
+            // Si le formulaire n'est pas valide, arrêter l'envoi
+            if (!formValide) {
+                document.getElementById('globalErreur').textContent = 'Remplissez tous les champs correctement.';
+                return;
+            }
+
+            // Récupérer la valeur du type de client
+            const typeClientValue = typeClient.value;
+
+            // Calculer le prix en fonction du type de client
+            let prix;
+            if (typeClientValue === 'enfant') {
+                prix = '10 euros';
+            } else if (typeClientValue === 'adulte') {
+                prix = '15 euros';
+            } else {
+                prix = 'Prix non défini';
+            }
+
+            // Envoyer le message via Socket.IO
+            const message = {
+                nom: nom,
+                prenom: prenom,
+                telephone: telephone,
+                choix: choix,
+                typeClient: typeClientValue,
+                prix: prix,
+                heure: heure
+            };
+            socket.emit('message', message);
+
+            // Réinitialiser les champs du formulaire après l'envoi
+            document.getElementById('formulaire').reset();
+        }
+
+        // Réinitialiser les messages d'erreur et les classes d'erreur
+        function resetErreurs() {
+            const champs = ['nom', 'prenom', 'telephone', 'choix', 'heure'];
+            champs.forEach(champ => {
+                document.getElementById(champ).classList.remove('erreur');
+                document.getElementById(`${champ}Erreur`).textContent = '';
+            });
+            document.getElementById('typeClientSection').classList.remove('erreur');
+            document.getElementById('typeClientErreur').textContent = '';
+            document.getElementById('heureErreur').textContent = '';
+            document.getElementById('heure').classList.remove('erreur');
+            document.getElementById('globalErreur').textContent = '';
+        }
+
+        // Mettre à jour le prix en fonction du type de client sélectionné
+        const typeClientRadios = document.querySelectorAll('input[name="typeClient"]');
+        typeClientRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                const prixSection = document.getElementById('prixSection');
+                if (radio.value === 'enfant') {
+                    prixSection.textContent = 'Prix: 10 euros';
+                } else if (radio.value === 'adulte') {
+                    prixSection.textContent = 'Prix: 15 euros';
+                } else {
+                    prixSection.textContent = '';
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
